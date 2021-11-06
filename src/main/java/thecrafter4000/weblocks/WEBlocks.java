@@ -13,6 +13,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import thecrafter4000.weblocks.addon.StairStateFactory;
+import thecrafter4000.weblocks.addon.TrapdoorStateFactory;
 import thecrafter4000.weblocks.addon.carpenters.CarpentersSlabStateFactory;
 import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
 
@@ -39,6 +40,7 @@ public class WEBlocks {
 	public void preInit(FMLPreInitializationEvent event) {
 		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
 		ModdedBlockRegistry.registerFactory(new StairStateFactory());
+		ModdedBlockRegistry.registerFactory(new TrapdoorStateFactory());
 	}
 	
 	@EventHandler
