@@ -41,10 +41,13 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 	
 	/** Registers a list of states. */
 	public static void register(Block block, List<State> values) {
-		String key = toUnlcStr(block);
-		if(registry.get(key) != null) {
+		String key = toUnlocalizedStr(block);
+
+		if (registry.get(key) != null) {
 			registry.get(key).addAll(values);
-		}else registry.put(key, new ArrayList<>(values));
+		} else {
+			registry.put(key, new ArrayList<>(values));
+		}
 	}
 	
 	/** Registers a state */
@@ -52,15 +55,15 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		register(block, Lists.newArrayList(state));
 	}
 	
-	/** Registers an state factory. Use this to handle more complicated stuff. */
+	/** Registers a state factory. Use this to handle more complicated stuff. */
 	public static void registerFactory(IStateFactory instance) {
 		factories.add(instance);
 	}
 		
 	protected static void load(File dir) {
 		File file = new File(dir.getAbsoluteFile() + "/worldedit/ModdedBlocks.json"); // Config file
-		Type type = new TypeToken<Map<String[], List<ModdedState>>>(){}.getType(); // Config type
-		Map<String[], List<State>> loaded = new HashMap<>();
+		Type type = new TypeToken<Map<String, List<ModdedState>>>(){}.getType(); // Config type
+		Map<String, List<State>> loaded = new HashMap<>();
 
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Vector.class, new VectorAdapter());
@@ -84,19 +87,19 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
         	FileReader reader = new FileReader(file);
 
         	loaded = gson.fromJson(reader, type);
-        	loaded.forEach((unlocalizedNames, moddedStates) -> {
-				for (State state : moddedStates) {
-					((ModdedState)state).validate();
-				}
+			loaded.forEach(
+				(unlocalizedName, moddedStates) -> {
+					for (State state : moddedStates) {
+						((ModdedState)state).validate();
+					}
 
-        		for(String name : unlocalizedNames) {
-					registry.put(name, moddedStates);
+					registry.put(unlocalizedName, moddedStates);
 				}
-			});
+			);
 
         	reader.close();
         	WEBlocks.Logger.info("Successfully loaded config.");
-        }catch(Exception e) {
+        } catch(Exception e) {
         	WEBlocks.Logger.fatal("Invalid configuration! Skipping loading. File path: " + file.getAbsolutePath(), e);
         }
 	}
@@ -113,28 +116,32 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		return states;
 	}
 	
-	/** Get's all injected registered states. */
-	private static List<State> getModdedStates(BaseBlock bukkitblock, boolean isEmpty){
-		Block block = Block.getBlockById(bukkitblock.getId()); // Getting forge block
-		List<State> states = registry.get(toUnlcStr(block)); // Getting stored entries.
+	/** Get all injected registered states. */
+	private static List<State> getModdedStates(BaseBlock bukkitBlock, boolean isEmpty){
+		Block block = Block.getBlockById(bukkitBlock.getId()); // Getting forge block
+		List<State> states = registry.get(toUnlocalizedStr(block)); // Getting stored entries.
 		
 		if(states == null) { // Null-safety
 			states = new ArrayList<>();
-		}else if(!states.isEmpty() && isEmpty) { // If we found nothing with WE, but in our own registry;
+		} else if(!states.isEmpty() && isEmpty) { // If we found nothing with WE, but in our own registry;
 			isEmpty = false;
 		}
-		
-		for(IStateFactory factory : factories) {
-			if(factory.canCreateState(bukkitblock, block) && (isEmpty || factory.shouldAlwaysAdd())) {
-				states.add(factory.create(bukkitblock, block));
+		List<State> finalStates = states;
+		boolean finalIsEmpty = isEmpty;
+
+		factories.forEach(
+			(factory) -> {
+				if(factory.canCreateState(bukkitBlock, block) && (finalIsEmpty || factory.shouldAlwaysAdd())) {
+					finalStates.add(factory.create(bukkitBlock, block));
+				}
 			}
-		}
+		);
 
 		return states;
 	}
 	
-	/** Converts a block to an registry key string */
-	private static String toUnlcStr(Block b) {
-		return b.getUnlocalizedName().substring(5);
+	/** Converts a block to a registry key string */
+	private static String toUnlocalizedStr(Block block) {
+		return block.getUnlocalizedName().substring(5);
 	}
 }
