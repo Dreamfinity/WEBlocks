@@ -23,7 +23,7 @@ public class ModdedStateValue implements StateValue {
 		this((byte) data, direction);
 	}
 
-	/** Get's the dataMask from parent */
+	/** Get the dataMask from parent */
 	void validate(ModdedState moddedState) {
 		dataMask = moddedState.getDataMask();
 	}

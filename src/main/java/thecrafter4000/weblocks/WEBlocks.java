@@ -25,6 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * WEBlocks, a WorldEdit fix to support other mod's blocks for rotating operations.
  * @author TheCrafter4000
+ * @author Veritaris
  */
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
@@ -62,41 +63,43 @@ public class WEBlocks {
 	
 	/**
 	 * Injects a modified block registry into an {@link LegacyWorldData} instance field.
-	 * @param clazz The class you want to inject in. Must be a subclass of {@link {@link LegacyWorldData}
+	 * @param classToInject The class you want to inject in. Must be a subclass of {@link {@link LegacyWorldData}
 	 * @param instanceField Name of the instance field. Mostly "INSTANCE".
 	 * @param registryField Name of the block registry field. Mostly "blockRegistry".
 	 */
-	public static void inject(String clazz, String instanceField, String registryField) {
+	public static void inject(String classToInject, String instanceField, String registryField) {
 		Object instance = null;
 		
 		try {
-			Class c = Class.forName(clazz); // Loads class
+			Class<?> c = Class.forName(classToInject); // Loads class
 			Field f = c.getDeclaredField(instanceField);
 			f.setAccessible(true);
 			instance = f.get(null); // Creating instance
 		} catch (NoSuchFieldException e) {
-			Logger.fatal("Did not resolve instance " + clazz + "." + instanceField + "!", e);
+			Logger.fatal("Did not resolve instance " + classToInject + "." + instanceField + "!", e);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
-			Logger.fatal("Failed to get " + clazz + " instance!", e);
+			Logger.fatal("Failed to get " + classToInject + " instance!", e);
 		} catch (ClassNotFoundException e) {
-			Logger.fatal("Failed to load class: " + clazz + "!", e);
+			Logger.fatal("Failed to load class: " + classToInject + "!", e);
 		} 
 		
-		if(instance == null) return;
+		if (instance == null) {
+			return;
+		}
 		
 		try {
 			Field f = LegacyWorldData.class.getDeclaredField(registryField);
 			f.setAccessible(true);
 			f.set(instance, ModdedBlockRegistry.INSTANCE);
-			Logger.debug("Successfully replaced blockRegistry for " + clazz + "!");
+			Logger.debug("Successfully replaced blockRegistry for " + classToInject + "!");
 		}catch(NoSuchFieldException e) {
-			Logger.fatal("Did not resolve blockRegistry field " + registryField + " in " + clazz + "!", e);
+			Logger.fatal("Did not resolve blockRegistry field " + registryField + " in " + classToInject + "!", e);
 		}catch (IllegalArgumentException | IllegalAccessException e) {
-			Logger.fatal("Failed to overwrite blockRegistry for " + clazz + "!", e);
+			Logger.fatal("Failed to overwrite blockRegistry for " + classToInject + "!", e);
 		}
 	}
 	
-	/** Copies array data into an map. The {@code key} is the String representation of the index, using {@link String#valueOf(int)}. */
+	/** Copies array data into a map. The {@code key} is the String representation of the index, using {@link String#valueOf(int)}. */
 	public static <V> Map<String, V> toImmutableMap(V[] data){
 		checkNotNull(data);
 		Builder<String, V> builder = ImmutableMap.builder();
